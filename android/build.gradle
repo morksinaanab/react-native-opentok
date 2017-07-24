@@ -17,6 +17,6 @@ android {
 
 dependencies {
     compile "com.facebook.react:react-native:+" 
-    compile 'com.opentok.android:opentok-android-sdk:2.10.+'
+    compile 'com.opentok.android:opentok-android-sdk:2.11.1'
 }
 

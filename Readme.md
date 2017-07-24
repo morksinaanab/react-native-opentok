@@ -1,3 +1,5 @@
+THIS IS MY PERSONAL VERSION.
+
 react-native-opentok
 ====================
 

@@ -7,12 +7,12 @@
  */
 
 @import UIKit;
+#import "RCTOpenTokSessionProvider.h"
 #import "RCTOpenTokPublisherView.h"
 #import "React/RCTEventDispatcher.h"
 #import "React/RCTUtils.h"
-#import <OpenTok/OpenTok.h>
 
-@interface RCTOpenTokPublisherView () <OTSessionDelegate, OTPublisherDelegate>
+@interface RCTOpenTokPublisherView () <OTPublisherDelegate>
 
 @end
 
@@ -37,14 +37,16 @@
  * Otherwise, `onSessionCreated` callback is called asynchronously
  */
 - (void)mount {
-    _session = [[OTSession alloc] initWithApiKey:_apiKey sessionId:_sessionId delegate:self];
+  [self initSession];
+}
 
-    OTError *error = nil;
-    [_session connectWithToken:_token error:&error];
+- (void)initSession {
+  RCTOpenTokSessionProvider *sessionManager = [RCTOpenTokSessionProvider sharedSession];
+  [sessionManager initSessionWithApiKey:_apiKey sessionId:_sessionId token:_token];
+  sessionManager.publisherView = self;
+  _session = [sessionManager session];
+  NSLog(@"RCTOpenTokPublisherView session %@",_session);
 
-    if (error) {
-        _onPublishError(RCTJSErrorFromNSError(error));
-    }
 }
 
 /**
@@ -58,6 +60,9 @@
     _publisher = [[OTPublisher alloc] initWithDelegate:self];
 
     OTError *error = nil;
+  
+    RCTOpenTokSessionProvider *sessionManager = [RCTOpenTokSessionProvider sharedSession];
+    _session = [sessionManager session];
 
     [_session publish:_publisher error:&error];
 
@@ -85,50 +90,57 @@
     _publisher = nil;
 }
 
-#pragma mark - OTSession delegate callbacks
+#pragma mark - OTSession forwarded delegate callbacks
 
-/**
- * When session is created, we start publishing straight away
- */
+
 - (void)sessionDidConnect:(OTSession*)session {
-    [self startPublishing];
+  NSLog(@"RCTOpenTokPublisherView.sessionDidConnect %@",session);
+  [self startPublishing];
 }
 
-- (void)sessionDidDisconnect:(OTSession*)session {}
+- (void)sessionDidDisconnect:(OTSession*)session {
+  NSLog(@"RCTOpenTokPublisherView.sessionDidDisconnect %@",session);
+}
 
-/**
- * @todo multiple streams in a session are out of scope
- * for our use-cases. To be implemented later.
- */
-- (void)session:(OTSession*)session streamCreated:(OTStream *)stream {}
-- (void)session:(OTSession*)session streamDestroyed:(OTStream *)stream {}
-
-/**
- * Called when another client connects to the session
- */
+- (void)session:(OTSession*)session streamCreated:(OTStream *)stream {
+  NSLog(@"RCTOpenTokPublisherView.streamCreated %@",stream);
+}
+- (void)session:(OTSession*)session streamDestroyed:(OTStream *)stream {
+  NSLog(@"RCTOpenTokPublisherView.streamDestroyed %@",stream);
+}
 - (void)session:(OTSession *)session connectionCreated:(OTConnection *)connection {
+  NSLog(@"RCTOpenTokPublisherView.connectionCreated %@",connection);
   NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
   [dateFormatter setDateFormat:@"EEE MMM dd HH:mm:ss ZZZ yyyy"];
-
+  
   [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
   NSString *creationTimeString = [dateFormatter stringFromDate:connection.creationTime];
+  
+  NSLog(@"OPENTOK connection.connectionId: %@",connection.connectionId);
+  NSLog(@"OPENTOK creationTimeString:%@",creationTimeString);
+  NSLog(@"OPENTOK connection.data:%@",connection.data);
+  
+  if ( connection.data == nil) {
     _onClientConnected(@{
-        @"connectionId": connection.connectionId,
-        @"creationTime": creationTimeString,
-        @"data": connection.data,
-    });
+                         @"connectionId": connection.connectionId,
+                         @"creationTime": creationTimeString,
+                         });
+  } else {
+    _onClientConnected(@{
+                         @"connectionId": connection.connectionId,
+                         @"creationTime": creationTimeString,
+                         @"data": connection.data,
+                         });
+  }
 }
 
-/**
- * Called when client disconnects from the session
- */
 - (void)session:(OTSession *)session connectionDestroyed:(OTConnection *)connection {
-    _onClientDisconnected(@{
-        @"connectionId": connection.connectionId,
-    });
+  NSLog(@"RCTOpenTokPublisherView.connectionDestroyed %@",connection);
+  _onClientDisconnected(@{ @"connectionId": connection.connectionId, });
 }
 
 - (void)session:(OTSession*)session didFailWithError:(OTError*)error {
+  NSLog(@"RCTOpenTokPublisherView.didFailWithError %@",error);
     _onPublishError(RCTJSErrorFromNSError(error));
 }
 
@@ -153,6 +165,8 @@
  */
 - (void)dealloc {
     [self cleanupPublisher];
+    RCTOpenTokSessionProvider *sessionManager = [RCTOpenTokSessionProvider sharedSession];
+    _session = [sessionManager session];
     [_session disconnect:nil];
 }
 

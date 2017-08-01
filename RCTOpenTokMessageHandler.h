@@ -9,7 +9,13 @@
 #import "React/RCTBridgeModule.h"
 #import "React/RCTEventDispatcher.h"
 #import <OpenTok/OpenTok.h>
+#import "RCTOpenTokPublisherView.h"
+#import "RCTOpenTokSubscriberView.h"
 
-@interface RCTOpenTokSessionManager : NSObject <RCTBridgeModule, OTSessionDelegate>
+@interface RCTOpenTokMessageHandler : NSObject <RCTBridgeModule>
+
+@property OTSession *session;
+
+- (void)session:(OTSession*)session receivedSignalType:(NSString*)type fromConnection:(OTConnection*)connection withString:(NSString*)string;
 
 @end

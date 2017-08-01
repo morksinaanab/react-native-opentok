@@ -8,9 +8,9 @@
 
 @import UIKit;
 #import "RCTOpenTokSubscriberView.h"
+#import "RCTOpenTokSessionProvider.h"
 #import "React/RCTEventDispatcher.h"
 #import "React/RCTUtils.h"
-#import <OpenTok/OpenTok.h>
 
 @interface RCTOpenTokSubscriberView () <OTSessionDelegate, OTSubscriberDelegate>
 
@@ -36,16 +36,17 @@
  */
 - (void)mount {
     [self cleanupSubscriber];
-    _session = [[OTSession alloc] initWithApiKey:_apiKey sessionId:_sessionId delegate:self];
-
-    OTError *error = nil;
-    [_session connectWithToken:_token error:&error];
-
-    if (error) {
-        _onSubscribeError(RCTJSErrorFromNSError(error));
-    }
+    [self initSession];
 }
 
+- (void)initSession {
+    RCTOpenTokSessionProvider *sessionManager = [RCTOpenTokSessionProvider sharedSession];
+    [sessionManager initSessionWithApiKey:_apiKey sessionId:_sessionId token:_token];
+    sessionManager.subscriberView = self;
+    _session = [sessionManager session];
+    NSLog(@"RCTOpenTokPublisherView session %@",_session);
+  
+}
 /**
  * Creates an instance of `OTSubscriber` and subscribes to stream in current
  * session
@@ -53,6 +54,9 @@
 - (void)doSubscribe:(OTStream*)stream {
     _subscriber = [[OTSubscriber alloc] initWithStream:stream delegate:self];
     OTError *error = nil;
+
+    RCTOpenTokSessionProvider *sessionManager = [RCTOpenTokSessionProvider sharedSession];
+    _session = [sessionManager session];
 
     [_session subscribe:_subscriber error:&error];
 
@@ -81,43 +85,24 @@
     _subscriber = nil;
 }
 
-#pragma mark - OTSession delegate callbacks
-
-/**
- * Called when session is created
- */
+#pragma mark - OTSession forwarded callbacks
 - (void)sessionDidConnect:(OTSession*)session {}
-
-/**
- * Called when session is destroyed
- */
 - (void)sessionDidDisconnect:(OTSession*)session {}
-
-/**
- * When stream is created we start subscribtion
- *
- * @todo we only support subscribing to a single stream, multiple streams
- * are out of scope for our use-cases. Contributions welcome.
- */
 - (void)session:(OTSession*)session streamCreated:(OTStream*)stream {
-    if (_subscriber == nil) {
-        [self doSubscribe:stream];
-    }
+  NSLog(@"session stream created");
+  if (_subscriber == nil) {
+    [self doSubscribe:stream];
+  }
 }
-
-/**
- * Called when stream is destroyed
- */
 - (void)session:(OTSession*)session streamDestroyed:(OTStream*)stream {
-    _onSubscribeStop(@{});
+  _onSubscribeStop(@{});
+}
+- (void)session:(OTSession*)session connectionCreated:(OTConnection *)connection {}
+- (void)session:(OTSession*)session connectionDestroyed:(OTConnection *)connection {}
+- (void)session:(OTSession*)session didFailWithError:(OTError*)error {
+  _onSubscribeError(RCTJSErrorFromNSError(error));
 }
 
-/**
- * Called when session error occurs
- */
-- (void)session:(OTSession*)session didFailWithError:(OTError*)error {
-    _onSubscribeError(RCTJSErrorFromNSError(error));
-}
 
 #pragma mark - OTSubscriber delegate callbacks
 
@@ -144,6 +129,9 @@
  */
 - (void)dealloc {
     [self cleanupSubscriber];
+    RCTOpenTokSessionProvider *sessionManager = [RCTOpenTokSessionProvider sharedSession];
+    _session = [sessionManager session];
+
     [_session disconnect:nil];
 }
 

@@ -9,6 +9,7 @@
 @import UIKit;
 #import "React/RCTEventDispatcher.h"
 #import "React/RCTComponent.h"
+#import <OpenTok/OpenTok.h>
 
 @interface RCTOpenTokPublisherView : UIView
 
@@ -22,5 +23,15 @@
 
 @property (nonatomic, copy) RCTDirectEventBlock onClientConnected;
 @property (nonatomic, copy) RCTDirectEventBlock onClientDisconnected;
+
+
+
+- (void)sessionDidConnect:(OTSession*)session;
+- (void)sessionDidDisconnect:(OTSession*)session;
+- (void)session:(OTSession*)session streamCreated:(OTStream *)stream;
+- (void)session:(OTSession*)session streamDestroyed:(OTStream *)stream;
+- (void)session:(OTSession*)session connectionCreated:(OTConnection *)connection;
+- (void)session:(OTSession*)session connectionDestroyed:(OTConnection *)connection;
+- (void)session:(OTSession*)session didFailWithError:(OTError*)error;
 
 @end

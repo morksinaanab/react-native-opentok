@@ -9,7 +9,6 @@
 import { requireNativeComponent, View } from 'react-native';
 import React from 'react';
 import SessionViewProps from './SessionViewProps';
-import withLoadingSpinner from './withLoadingSpinner';
 
 const noop = () => {};
 
@@ -27,24 +26,9 @@ class SubscriberView extends React.Component {
   static propTypes = {
     ...View.propTypes,
     ...SessionViewProps,
-    /**
-     * This function is called on subscribe start
-     */
-    onSubscribeStart: React.PropTypes.func,
-    /**
-     * This function is called on subscribe error
-     */
-    onSubscribeError: React.PropTypes.func,
-    /**
-     * This function is called on subscribe stop
-     */
-    onSubscribeStop: React.PropTypes.func,
   };
 
   static defaultProps = {
-    onSubscribeStart: noop,
-    onSubscribeError: noop,
-    onSubscribeStop: noop,
   };
 
   render() {
@@ -53,4 +37,4 @@ class SubscriberView extends React.Component {
 }
 const RCTSubscriberView = requireNativeComponent('RCTOpenTokSubscriberView', SubscriberView);
 
-export default withLoadingSpinner(SubscriberView, 'onSubscribeStart');
+export default SubscriberView;

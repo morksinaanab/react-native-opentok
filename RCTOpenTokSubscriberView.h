@@ -13,24 +13,6 @@
 
 @interface RCTOpenTokSubscriberView : UIView
 
-@property (nonatomic, strong) NSString *apiKey;
-@property (nonatomic, strong) NSString *sessionId;
-@property (nonatomic, strong) NSString *token;
-
-@property (nonatomic, copy) RCTDirectEventBlock onSubscribeError;
-@property (nonatomic, copy) RCTDirectEventBlock onSubscribeStop;
-@property (nonatomic, copy) RCTDirectEventBlock onSubscribeStart;
-
-
-
-
-- (void)sessionDidConnect:(OTSession*)session;
-- (void)sessionDidDisconnect:(OTSession*)session;
-- (void)session:(OTSession*)session streamCreated:(OTStream *)stream;
-- (void)session:(OTSession*)session streamDestroyed:(OTStream *)stream;
-- (void)session:(OTSession*)session connectionCreated:(OTConnection *)connection;
-- (void)session:(OTSession*)session connectionDestroyed:(OTConnection *)connection;
-- (void)session:(OTSession*)session didFailWithError:(OTError*)error;
-
+@property BOOL initialized;
 
 @end

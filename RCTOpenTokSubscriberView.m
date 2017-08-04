@@ -8,131 +8,55 @@
 
 @import UIKit;
 #import "RCTOpenTokSubscriberView.h"
-#import "RCTOpenTokSessionProvider.h"
-#import "React/RCTEventDispatcher.h"
-#import "React/RCTUtils.h"
+#import "RCTOpenTokSharedInfo.h"
 
-@interface RCTOpenTokSubscriberView () <OTSessionDelegate, OTSubscriberDelegate>
+@implementation RCTOpenTokSubscriberView
 
-@end
-
-@implementation RCTOpenTokSubscriberView {
-    OTSession *_session;
-    OTSubscriber *_subscriber;
-}
-
-/**
- * Mounts component after all props were passed
- */
 - (void)didMoveToWindow {
-    [super didMoveToSuperview];
-    [self mount];
-}
-
-/**
- * Creates a new session with a given apiKey, sessionID and token
- *
- * Calls `onSubscribeError` in case an error happens during initial creation.
- */
-- (void)mount {
-    [self cleanupSubscriber];
-    [self initSession];
-}
-
-- (void)initSession {
-    RCTOpenTokSessionProvider *sessionManager = [RCTOpenTokSessionProvider sharedSession];
-    [sessionManager initSessionWithApiKey:_apiKey sessionId:_sessionId token:_token];
-    sessionManager.subscriberView = self;
-    _session = [sessionManager session];
-    NSLog(@"RCTOpenTokPublisherView session %@",_session);
+  [super didMoveToSuperview];
   
-}
-/**
- * Creates an instance of `OTSubscriber` and subscribes to stream in current
- * session
- */
-- (void)doSubscribe:(OTStream*)stream {
-    _subscriber = [[OTSubscriber alloc] initWithStream:stream delegate:self];
-    OTError *error = nil;
-
-    RCTOpenTokSessionProvider *sessionManager = [RCTOpenTokSessionProvider sharedSession];
-    _session = [sessionManager session];
-
-    [_session subscribe:_subscriber error:&error];
-
-    if (error)
-    {
-      _onSubscribeError(RCTJSErrorFromNSError(error));
-      return;
-    }
-
-    [self attachSubscriberView];
-}
-
-/**
- * Attaches subscriber preview
- */
-- (void)attachSubscriberView {
-    [_subscriber.view setFrame:CGRectMake(0, 0, self.bounds.size.width, self.bounds.size.height)];
-    [self addSubview:_subscriber.view];
-}
-
-/**
- * Cleans subscriber
- */
-- (void)cleanupSubscriber {
-    [_subscriber.view removeFromSuperview];
-    _subscriber = nil;
-}
-
-#pragma mark - OTSession forwarded callbacks
-- (void)sessionDidConnect:(OTSession*)session {}
-- (void)sessionDidDisconnect:(OTSession*)session {}
-- (void)session:(OTSession*)session streamCreated:(OTStream*)stream {
-  NSLog(@"session stream created");
-  if (_subscriber == nil) {
-    [self doSubscribe:stream];
+  if (self.window) {
+    [self initSubscriberView];
+  } else {
+    [self deinitSubscriberView];
   }
 }
-- (void)session:(OTSession*)session streamDestroyed:(OTStream*)stream {
-  _onSubscribeStop(@{});
-}
-- (void)session:(OTSession*)session connectionCreated:(OTConnection *)connection {}
-- (void)session:(OTSession*)session connectionDestroyed:(OTConnection *)connection {}
-- (void)session:(OTSession*)session didFailWithError:(OTError*)error {
-  _onSubscribeError(RCTJSErrorFromNSError(error));
-}
 
-
-#pragma mark - OTSubscriber delegate callbacks
-
-- (void)subscriber:(OTSubscriberKit*)subscriber didFailWithError:(OTError*)error {
-    _onSubscribeError(RCTJSErrorFromNSError(error));
-    [self cleanupSubscriber];
-}
-
-- (void)subscriberDidConnectToStream:(OTSubscriberKit*)subscriber {
-    _onSubscribeStart(@{});
+- (void)initSubscriberView {
+  NSLog(@"RCTOpenTokSubscriberView.initSubscriberView");
+  if (!self.initialized) {
+    RCTOpenTokSharedInfo *sharedInfo = [RCTOpenTokSharedInfo sharedInstance];
+    if (sharedInfo.incomingVideoSubscriber) {
+      [sharedInfo.incomingVideoSubscriber.view setFrame:CGRectMake(0, 0, self.bounds.size.width, self.bounds.size.height)];
+      [self addSubview:sharedInfo.incomingVideoSubscriber.view];
+      self.initialized = true;
+      NSLog(@"RCTOpenTokSubscriberView.initSubscriberView initialized");
+    } else {
+      NSLog(@"RCTOpenTokSubscriberView.initSubscriberView no subscriber");
+    }
+  } else {
+    NSLog(@"RCTOpenTokSubscriberView.initSubscriberView already initialized");
+  }
 }
 
-- (void)subscriberDidDisconnectFromStream:(OTSubscriberKit*)subscriber {
-    _onSubscribeStop(@{});
-    [self cleanupSubscriber];
+- (void)deinitSubscriberView {
+  NSLog(@"RCTOpenTokSubscriberView.deinitSubscriberView");
+  if (self.initialized) {
+    RCTOpenTokSharedInfo *sharedInfo = [RCTOpenTokSharedInfo sharedInstance];
+    if (sharedInfo.incomingVideoSubscriber) {
+      [sharedInfo.incomingVideoSubscriber.view removeFromSuperview];
+      self.initialized = false;
+    } else {
+      NSLog(@"RCTOpenTokSubscriberView.deinitSubscriberView no subscriber");
+    }
+  } else {
+    NSLog(@"RCTOpenTokSubscriberView.deinitSubscriberView already deinitialized");
+  }
+
 }
 
-- (void)subscriberDidReconnectToStream:(OTSubscriberKit*)subscriber {
-    _onSubscribeStart(@{});
-}
-
-/**
- * Remove session when this component is unmounted
- */
 - (void)dealloc {
-    [self cleanupSubscriber];
-    RCTOpenTokSessionProvider *sessionManager = [RCTOpenTokSessionProvider sharedSession];
-    _session = [sessionManager session];
-
-    [_session disconnect:nil];
+    [self deinitSubscriberView];
 }
 
 @end

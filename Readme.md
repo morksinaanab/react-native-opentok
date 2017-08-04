@@ -1,4 +1,5 @@
 THIS IS MY PERSONAL VERSION.
+I've changed a lot of code and the flow, in order to keep the control in react. Need to change this readme. it's not good anymore.
 
 react-native-opentok
 ====================

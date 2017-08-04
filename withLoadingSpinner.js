@@ -42,9 +42,7 @@ const withLoadingSpinner = (Component, callbackName) => class SpinnerView extend
         <Component {...passProps} />
         {this.state.renderSpinner && (
           <View style={[styles.spinnerContainer, this.props.spinnerContainerStyle]}>
-            <ActivityIndicator
-              animating
-            />
+            <ActivityIndicator animating />
           </View>
         )}
       </View>

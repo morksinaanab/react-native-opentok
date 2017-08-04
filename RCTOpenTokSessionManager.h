@@ -6,13 +6,12 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-@import UIKit;
+#import "React/RCTBridgeModule.h"
 #import "React/RCTEventDispatcher.h"
-#import "React/RCTComponent.h"
-#import <OpenTok/OpenTok.h>
+#import "RCTOpenTokSharedInfo.h"
 
-@interface RCTOpenTokPublisherView : UIView
+@interface RCTOpenTokSessionManager : NSObject <RCTBridgeModule, OTSessionDelegate, OTPublisherDelegate, OTSubscriberDelegate>
 
-@property BOOL initialized;
+@property RCTOpenTokSharedInfo *sharedInfo;
 
 @end

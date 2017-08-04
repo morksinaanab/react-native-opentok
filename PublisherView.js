@@ -9,7 +9,6 @@
 import { requireNativeComponent, View } from 'react-native';
 import React from 'react';
 import SessionViewProps from './SessionViewProps';
-import withLoadingSpinner from './withLoadingSpinner';
 
 const noop = () => {};
 
@@ -27,52 +26,9 @@ class PublisherView extends React.Component {
   static propTypes = {
     ...View.propTypes,
     ...SessionViewProps,
-    /**
-     * This function is called on publish start
-     */
-    onPublishStart: React.PropTypes.func,
-    /**
-     * This function is called on publish error
-     */
-    onPublishError: React.PropTypes.func,
-    /**
-     * This function is called on publish stop
-     */
-    onPublishStop: React.PropTypes.func,
-    /**
-     * This function is called when new client is connected to
-     * the current stream
-     *
-     * Receives payload:
-     * ```
-     * {
-     *   connectionId: string,
-     *   creationTime: string,
-     *   data: string,
-     * }
-     * ```
-     */
-    onClientConnected: React.PropTypes.func,
-    /**
-     * This function is called when client is disconnected from
-     * the current stream
-     *
-     * Receives payload:
-     * ```
-     * {
-     *   connectionId: string,
-     * }
-     * ```
-     */
-    onClientDisconnected: React.PropTypes.func,
   };
 
   static defaultProps = {
-    onPublishStart: noop,
-    onPublishError: noop,
-    onPublishStop: noop,
-    onClientConnected: noop,
-    onClientDisconnected: noop,
   };
 
   render() {
@@ -82,4 +38,4 @@ class PublisherView extends React.Component {
 
 const RCTPublisherView = requireNativeComponent('RCTOpenTokPublisherView', PublisherView);
 
-export default withLoadingSpinner(PublisherView, 'onPublishStart');
+export default PublisherView;

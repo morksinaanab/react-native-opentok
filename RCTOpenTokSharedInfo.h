@@ -15,6 +15,9 @@
 @property OTSubscriber *incomingVideoSubscriber;
 @property OTPublisher *outgoingVideoPublisher;
 @property OTStream *outgoingVideoStream;
+@property AVCaptureDevicePosition cameraPosition;
+@property BOOL audioIsOn;
+@property BOOL videoIsOn;
 
 + (id)sharedInstance;
 

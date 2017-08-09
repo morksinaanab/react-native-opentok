@@ -8,6 +8,12 @@ export const startPublishing  = SessionManager.startPublishing;
 export const stopPublishing   = SessionManager.stopPublishing;
 export const startReceiving   = SessionManager.startReceiving;
 export const stopReceiving    = SessionManager.stopReceiving;
+export const audioOn          = SessionManager.audioOn;
+export const audioOff         = SessionManager.audioOff;
+export const videoOn          = SessionManager.videoOn;
+export const videoOff         = SessionManager.videoOff;
+export const cameraFront      = SessionManager.cameraFront;
+export const cameraBack       = SessionManager.cameraBack;
 
 export const clearSession = SessionManager.clearSession;
 
@@ -22,6 +28,8 @@ export const onReceivingDisconnected  = (callback) => { listeners.push( NativeAp
 export const onPublishingStarted      = (callback) => { listeners.push( NativeAppEventEmitter.addListener('onPublishingStarted',      (e) => callback(e)) ) };
 export const onPublishingEnded        = (callback) => { listeners.push( NativeAppEventEmitter.addListener('onPublishingEnded',        (e) => callback(e)) ) };
 export const onSessionError           = (callback) => { listeners.push( NativeAppEventEmitter.addListener('onSessionError',           (e) => callback(e)) ) };
+export const onCameraFacingFront      = (callback) => { listeners.push( NativeAppEventEmitter.addListener('onCameraFacingFront',      (e) => callback(e)) ) };
+export const onCameraFacingBack       = (callback) => { listeners.push( NativeAppEventEmitter.addListener('onCameraFacingBack',       (e) => callback(e)) ) };
 
 export const stopListeners = () => {
   for (var i in listeners) {

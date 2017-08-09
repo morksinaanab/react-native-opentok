@@ -18,23 +18,59 @@
 //  return dispatch_get_main_queue();
 //}
 
-/*
- onSessionConnected
- onSessionDisconnected
- onMessageReceived
- onReceivingFound
- onReceivingLost
- onPublishingStarted
- onPublishingEnded
- onSessionError
- onReceivingConnected
- onReceivingReconnected
- onReceivingDisconnected
-*/
-
-#pragma mark REACT 
+#pragma mark REACT
 
 RCT_EXPORT_MODULE();
+
+RCT_EXPORT_METHOD(audioOn) {
+  NSLog(@"RCTOpenTokSessionManager.audioOn");
+  RCTOpenTokSharedInfo *sharedInfo = [RCTOpenTokSharedInfo sharedInstance];
+  if (sharedInfo.session != nil) {
+    sharedInfo.audioIsOn = true;
+  }
+  [self updateAudioState];
+}
+RCT_EXPORT_METHOD(audioOff) {
+  NSLog(@"RCTOpenTokSessionManager.audioOff");
+  RCTOpenTokSharedInfo *sharedInfo = [RCTOpenTokSharedInfo sharedInstance];
+  if (sharedInfo.session != nil) {
+    sharedInfo.audioIsOn = false;
+  }
+  [self updateAudioState];
+}
+RCT_EXPORT_METHOD(videoOn) {
+  NSLog(@"RCTOpenTokSessionManager.videoOn");
+  RCTOpenTokSharedInfo *sharedInfo = [RCTOpenTokSharedInfo sharedInstance];
+  if (sharedInfo.session != nil) {
+    sharedInfo.videoIsOn = true;
+  }
+  [self updateVideoState];
+
+}
+RCT_EXPORT_METHOD(videoOff) {
+  NSLog(@"RCTOpenTokSessionManager.videoOff");
+  RCTOpenTokSharedInfo *sharedInfo = [RCTOpenTokSharedInfo sharedInstance];
+  if (sharedInfo.session != nil) {
+    sharedInfo.videoIsOn = false;
+  }
+  [self updateVideoState];
+}
+RCT_EXPORT_METHOD(cameraFront) {
+  NSLog(@"RCTOpenTokSessionManager.cameraFront");
+  RCTOpenTokSharedInfo *sharedInfo = [RCTOpenTokSharedInfo sharedInstance];
+  if (sharedInfo.session != nil) {
+    sharedInfo.cameraPosition = AVCaptureDevicePositionFront;
+  }
+  [self updateCameraState];
+}
+RCT_EXPORT_METHOD(cameraBack) {
+  NSLog(@"RCTOpenTokSessionManager.cameraBack");
+  RCTOpenTokSharedInfo *sharedInfo = [RCTOpenTokSharedInfo sharedInstance];
+  if (sharedInfo.session != nil) {
+    sharedInfo.cameraPosition = AVCaptureDevicePositionBack;
+  }
+  [self updateCameraState];
+}
 
 RCT_EXPORT_METHOD(connect:(NSString *)apiKey sessionId:(NSString *)sessionId token:(NSString *)token) {
   NSLog(@"RCTOpenTokSessionManager.connect %@,%@,%@",apiKey,sessionId,token);
@@ -95,6 +131,7 @@ RCT_EXPORT_METHOD(startPublishing) {
   
   if (sharedInfo.session) {
     sharedInfo.outgoingVideoPublisher = [[OTPublisher alloc] initWithDelegate:self];
+    [self updatePublishState];
     OTError* error = nil;
     [sharedInfo.session publish:sharedInfo.outgoingVideoPublisher error:&error];
     if (error) {
@@ -164,11 +201,62 @@ RCT_EXPORT_METHOD(stopReceiving) {
 
 }
 
+# pragma mark publisher manipulation
+- (void)updateAudioState {
+
+  RCTOpenTokSharedInfo *sharedInfo = [RCTOpenTokSharedInfo sharedInstance];
+  if (sharedInfo.session && sharedInfo.outgoingVideoPublisher) {
+    sharedInfo.outgoingVideoPublisher.publishAudio = sharedInfo.audioIsOn;
+    NSLog(@"RCTOpenTokSessionManager.updateAudioState to:%@", sharedInfo.audioIsOn?@"TRUE":@"FALSE");
+  } else {
+    if (sharedInfo.session == nil) NSLog(@"RCTOpenTokSessionManager.updateAudioState session was nil");
+    if (sharedInfo.outgoingVideoPublisher == nil) NSLog(@"RCTOpenTokSessionManager.updateAudioState publisher was nil");
+  }
+
+}
+
+- (void)updateVideoState {
+  
+  RCTOpenTokSharedInfo *sharedInfo = [RCTOpenTokSharedInfo sharedInstance];
+  if (sharedInfo.session && sharedInfo.outgoingVideoPublisher) {
+    sharedInfo.outgoingVideoPublisher.publishVideo = sharedInfo.videoIsOn;
+    NSLog(@"RCTOpenTokSessionManager.updateVideoState to:%@", sharedInfo.videoIsOn?@"TRUE":@"FALSE");
+  } else {
+    if (sharedInfo.session == nil) NSLog(@"RCTOpenTokSessionManager.updateVideoState session was nil");
+    if (sharedInfo.outgoingVideoPublisher == nil) NSLog(@"RCTOpenTokSessionManager.updateVideoState publisher was nil");
+  }
+  
+}
+
+- (void)updateCameraState {
+  
+  //set default
+  
+  RCTOpenTokSharedInfo *sharedInfo = [RCTOpenTokSharedInfo sharedInstance];
+  if (sharedInfo.session && sharedInfo.outgoingVideoPublisher) {
+    //default
+    if (sharedInfo.cameraPosition < 0) sharedInfo.cameraPosition = AVCaptureDevicePositionFront;
+    
+    sharedInfo.outgoingVideoPublisher.cameraPosition = sharedInfo.cameraPosition;
+    NSLog(@"RCTOpenTokSessionManager.updateCameraState to: (%ld)", (long)sharedInfo.cameraPosition);
+  } else {
+    if (sharedInfo.session == nil) NSLog(@"RCTOpenTokSessionManager.updateCameraState session was nil");
+    if (sharedInfo.outgoingVideoPublisher == nil) NSLog(@"RCTOpenTokSessionManager.updateCameraState publisher was nil");
+  }
+  
+}
+
+- (void)updatePublishState {
+  [self updateVideoState];
+  [self updateAudioState];
+  [self updateCameraState];
+}
 
 # pragma mark - OTSession delegate
 - (void)sessionDidConnect:(OTSession*)session {
   NSLog(@"RCTOpenTokSessionManager.session.sessionDidConnect");
   [self.bridge.eventDispatcher sendAppEventWithName:@"onSessionConnected" body:@{}];
+  
 }
 
 - (void)sessionDidDisconnect:(OTSession*)session {
@@ -225,6 +313,17 @@ RCT_EXPORT_METHOD(stopReceiving) {
 - (void)publisher:(OTPublisherKit *)publisher streamDestroyed:(OTStream *)stream {
   NSLog(@"RCTOpenTokSessionManager.publisher.streamDestroyed");
   [self.bridge.eventDispatcher sendAppEventWithName:@"onPublishingEnded" body:@{}];
+}
+
+- (void)publisher:(OTPublisher *)publisher didChangeCameraPosition:(AVCaptureDevicePosition)position {
+
+  NSLog(@"RCTOpenTokSessionManager.publisher.didChangeCameraPosition");
+
+  if (position == AVCaptureDevicePositionFront) {
+    [self.bridge.eventDispatcher sendAppEventWithName:@"onCameraFacingFront" body:@{}];
+  } else {
+    [self.bridge.eventDispatcher sendAppEventWithName:@"onCameraFacingBack" body:@{}];
+  }
 }
 
 #pragma mark - OTSubscribe delegate

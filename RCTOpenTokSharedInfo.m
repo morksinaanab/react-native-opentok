@@ -27,6 +27,10 @@
   static dispatch_once_t onceToken;
   dispatch_once(&onceToken, ^{
     singleSharedInstance = [[self alloc] init];
+    //default settings
+    singleSharedInstance.audioIsOn = true;
+    singleSharedInstance.videoIsOn = true;
+    singleSharedInstance.cameraPosition = AVCaptureDevicePositionFront;
   });
   return singleSharedInstance;
 }

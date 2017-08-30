@@ -102,7 +102,7 @@ public class OpenTokSessionManager extends ReactContextBaseJavaModule implements
         OpenTokSharedInfo sharedInfo = OpenTokSharedInfo.getInstance();
         sharedInfo.session = new Session(getReactApplicationContext(), apiKey, sessionId);
         sharedInfo.session.setSessionListener(this);
-        sharedInfo.session.setSessionListener(this);
+        sharedInfo.session.setSignalListener(this);
         sharedInfo.session.setConnectionListener(this);
         sharedInfo.session.connect(token);
 
@@ -165,6 +165,8 @@ public class OpenTokSessionManager extends ReactContextBaseJavaModule implements
         OpenTokSharedInfo sharedInfo = OpenTokSharedInfo.getInstance();
         if (sharedInfo.session != null && sharedInfo.latestIncomingVideoStream != null) {
             sharedInfo.incomingVideoSubscriber = new Subscriber(getReactApplicationContext(),sharedInfo.latestIncomingVideoStream);
+            sharedInfo.incomingVideoSubscriber.setSubscriberListener(this);
+
             sharedInfo.session.subscribe(sharedInfo.incomingVideoSubscriber);
             Log.d("OPENTOK","OpenTokSessionManager.startReceiving done");
         } else {
@@ -186,15 +188,12 @@ public class OpenTokSessionManager extends ReactContextBaseJavaModule implements
     }
 
     protected void sendEvent(Events event) {
-        WritableMap payload = Arguments.createMap();
-        sendEvent(event, payload);
+        sendEvent(event, "");
     }
 
-    protected void sendEvent(Events event, WritableMap payload) {
+    protected void sendEvent(Events event, String data) {
         ReactContext reactContext = (ReactContext)getReactApplicationContext();
-        reactContext
-                .getJSModule(RCTNativeAppEventEmitter.class)
-                .emit(event.toString(), payload);
+        reactContext.getJSModule(RCTNativeAppEventEmitter.class).emit(event.toString(), data);
     }
 
 
@@ -255,12 +254,16 @@ public class OpenTokSessionManager extends ReactContextBaseJavaModule implements
     @Override
     public void onStreamReceived(Session session, Stream stream) {
         Log.d("OPENTOK","OpenTokSessionManager.stream.streamReceived");
+        OpenTokSharedInfo sharedInfo = OpenTokSharedInfo.getInstance();
+        sharedInfo.latestIncomingVideoStream = stream;
         sendEvent(Events.EVENT_RECEIVING_FOUND);
     }
 
     @Override
     public void onStreamDropped(Session session, Stream stream) {
         Log.d("OPENTOK","OpenTokSessionManager.stream.streamDropped");
+        OpenTokSharedInfo sharedInfo = OpenTokSharedInfo.getInstance();
+        sharedInfo.latestIncomingVideoStream = stream;
         sendEvent(Events.EVENT_RECEIVING_LOST);
     }
 
@@ -352,13 +355,17 @@ public class OpenTokSessionManager extends ReactContextBaseJavaModule implements
         sendEvent(Events.EVENT_RECEIVING_DISCONNECTED);
     }
 
+
+//
+//- (void)session:(OTSession*)session receivedSignalType:(NSString*)type fromConnection:(OTConnection*)connection withString:(NSString*)string {
+//        NSLog(@"Received signal %@ %@ %@", type, string, session);
+//  [self.bridge.eventDispatcher sendAppEventWithName:@"onMessageReceived" body:string];
+//    }
+//
+//
     /* Signal Listener methods */
     @Override
     public void onSignalReceived(Session session, String type, String data, Connection connection) {
-        WritableMap payload = Arguments.createMap();
-        payload.putString("message", data);
-        payload.putString("data", connection.getData());
-
-        sendEvent(Events.EVENT_MESSAGE_RECEIVED, payload);
+        sendEvent(Events.EVENT_MESSAGE_RECEIVED, data);
     }
 }

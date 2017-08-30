@@ -17,13 +17,13 @@ public class PublisherViewManager extends SimpleViewManager {
         return new PublisherView(reactContext);
     }
 
-//    @Override
-//    @Nullable
-//    public Map getExportedCustomDirectEventTypeConstants() {
-//        MapBuilder.Builder builder = MapBuilder.builder();
-//        for (Events event : Events.values()) {
-//            builder.put(event.toString(), MapBuilder.of("registrationName", event.toString()));
-//        }
-//        return builder.build();
-//    }
+    @Override
+    @Nullable
+    public Map getExportedCustomDirectEventTypeConstants() {
+        MapBuilder.Builder builder = MapBuilder.builder();
+        for (Events event : Events.values()) {
+            builder.put(event.toString(), MapBuilder.of("registrationName", event.toString()));
+        }
+        return builder.build();
+    }
 }

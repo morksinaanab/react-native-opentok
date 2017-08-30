@@ -19,13 +19,13 @@ public class SubscriberViewManager extends SimpleViewManager {
         return new SubscriberView(reactContext);
     }
 
-//    @Override
-//    @Nullable
-//    public Map getExportedCustomDirectEventTypeConstants() {
-//        MapBuilder.Builder builder = MapBuilder.builder();
-//        for (Events event : Events.values()) {
-//            builder.put(event.toString(), MapBuilder.of("registrationName", event.toString()));
-//        }
-//        return builder.build();
-//    }
+    @Override
+    @Nullable
+    public Map getExportedCustomDirectEventTypeConstants() {
+        MapBuilder.Builder builder = MapBuilder.builder();
+        for (Events event : Events.values()) {
+            builder.put(event.toString(), MapBuilder.of("registrationName", event.toString()));
+        }
+        return builder.build();
+    }
 }

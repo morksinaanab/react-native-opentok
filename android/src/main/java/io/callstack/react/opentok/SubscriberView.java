@@ -1,6 +1,7 @@
 package io.callstack.react.opentok;
 
 import android.util.Log;
+import android.view.View;
 import android.widget.FrameLayout;
 
 import com.facebook.react.uimanager.ThemedReactContext;
@@ -31,7 +32,9 @@ public class SubscriberView extends FrameLayout {
             OpenTokSharedInfo sharedInfo = OpenTokSharedInfo.getInstance();
             if (sharedInfo.incomingVideoSubscriber != null) {
                 //attach frame to my view
-                addView(sharedInfo.incomingVideoSubscriber.getView(), new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+                View view = sharedInfo.incomingVideoSubscriber.getView();
+                Log.d("OPENTOK","OpenTokSubscriberView.view wxh:" + view.getWidth() + "x" + view.getHeight());
+                addView(view, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
                 initialized = true;
                 Log.d("OPENTOK","OpenTokSubscriberView.initSubscriberView initialized");
             } else {
@@ -47,6 +50,7 @@ public class SubscriberView extends FrameLayout {
             OpenTokSharedInfo sharedInfo = OpenTokSharedInfo.getInstance();
             if (sharedInfo.incomingVideoSubscriber != null) {
                 removeView(sharedInfo.incomingVideoSubscriber.getView());
+                initialized = false;
                 Log.d("OPENTOK","OpenTokPublisherView.deinitSubscriberView deinitialized");
             } else {
                 Log.d("OPENTOK","OpenTokPublisherView.deinitSubscriberView no publisher");

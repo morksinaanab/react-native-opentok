@@ -1,5 +1,7 @@
 package io.callstack.react.opentok;
 
+import android.app.Activity;
+import android.content.pm.ActivityInfo;
 import android.util.Log;
 
 import com.facebook.react.bridge.Arguments;
@@ -21,14 +23,6 @@ import com.opentok.android.SubscriberKit;
 import java.util.Map;
 
 public class OpenTokSessionManager extends ReactContextBaseJavaModule implements Subscriber.SubscriberListener, Subscriber.StreamListener, Publisher.PublisherListener, Publisher.CameraListener, Session.SessionListener, Session.ConnectionListener, Session.SignalListener {
-
-
-//    android.permission.CAMERA
-//    android.permission.INTERNET
-//    android.permission.RECORD_AUDIO
-//    android.permission.MODIFY_AUDIO_SETTINGS
-//    android.permission.BLUETOOTH
-//    android.permission.BROADCAST_STICKY
 
     protected OpenTokSharedInfo sharedInfo;
     protected Session mSession;
@@ -98,6 +92,7 @@ public class OpenTokSessionManager extends ReactContextBaseJavaModule implements
 
     @ReactMethod
     public void connect(String apiKey, String sessionId, String token) {
+        Log.d("OPENTOK","OpenTokSessionManager.connect apiKey:" + apiKey + " sessionId:"+sessionId + " token:"+token);
         //no exception or error handling?
         OpenTokSharedInfo sharedInfo = OpenTokSharedInfo.getInstance();
         sharedInfo.session = new Session(getReactApplicationContext(), apiKey, sessionId);
@@ -122,10 +117,12 @@ public class OpenTokSessionManager extends ReactContextBaseJavaModule implements
 
     @ReactMethod
     public void clearSession() {
+
         OpenTokSharedInfo sharedInfo = OpenTokSharedInfo.getInstance();
-        if (sharedInfo.session == null) {
+        if (sharedInfo.session != null) {
             sharedInfo.session.disconnect();
             sharedInfo.session = null;
+            forceScreenUpdate();
             Log.d("OPENTOK","OpenTokSessionManager.clearSession cleared");
         } else {
             Log.d("OPENTOK","OpenTokSessionManager.clearSession was already null");
@@ -136,10 +133,9 @@ public class OpenTokSessionManager extends ReactContextBaseJavaModule implements
     public void startPublishing() {
         OpenTokSharedInfo sharedInfo = OpenTokSharedInfo.getInstance();
         if (sharedInfo.session != null) {
-            sharedInfo.outgoingVideoPublisher = new Publisher(getReactApplicationContext());
+            sharedInfo.outgoingVideoPublisher = new Publisher.Builder(getReactApplicationContext()).build();
             sharedInfo.outgoingVideoPublisher.setCameraListener(this);
             sharedInfo.outgoingVideoPublisher.setPublisherListener(this);
-            updatePublishState();
             sharedInfo.session.publish(sharedInfo.outgoingVideoPublisher);
             Log.d("OPENTOK","OpenTokSessionManager.startPublishing done");
         } else {
@@ -159,12 +155,11 @@ public class OpenTokSessionManager extends ReactContextBaseJavaModule implements
         }
     }
 
-
     @ReactMethod
     public void startReceiving() {
         OpenTokSharedInfo sharedInfo = OpenTokSharedInfo.getInstance();
         if (sharedInfo.session != null && sharedInfo.latestIncomingVideoStream != null) {
-            sharedInfo.incomingVideoSubscriber = new Subscriber(getReactApplicationContext(),sharedInfo.latestIncomingVideoStream);
+            sharedInfo.incomingVideoSubscriber = new Subscriber.Builder(getReactApplicationContext(), sharedInfo.latestIncomingVideoStream).build();
             sharedInfo.incomingVideoSubscriber.setSubscriberListener(this);
 
             sharedInfo.session.subscribe(sharedInfo.incomingVideoSubscriber);
@@ -187,6 +182,18 @@ public class OpenTokSessionManager extends ReactContextBaseJavaModule implements
         }
     }
 
+    /*
+    This is a hack to force a screen update after a video call.
+    It seems the video has an artefact / black space after removed from screen
+
+ */
+    @ReactMethod
+    public void forceScreenUpdate() {
+        final Activity currentActivity = this.getCurrentActivity();
+        new android.os.Handler().postDelayed( new Runnable() { public void run() { currentActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE); } }, 100);
+        new android.os.Handler().postDelayed( new Runnable() { public void run() { currentActivity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT); } }, 300);
+    }
+
     protected void sendEvent(Events event) {
         sendEvent(event, "");
     }
@@ -195,7 +202,6 @@ public class OpenTokSessionManager extends ReactContextBaseJavaModule implements
         ReactContext reactContext = (ReactContext)getReactApplicationContext();
         reactContext.getJSModule(RCTNativeAppEventEmitter.class).emit(event.toString(), data);
     }
-
 
     /* Publisher manipulation */
     protected void updateAudioState() {
@@ -213,21 +219,23 @@ public class OpenTokSessionManager extends ReactContextBaseJavaModule implements
         OpenTokSharedInfo sharedInfo = OpenTokSharedInfo.getInstance();
         if (sharedInfo.session != null && sharedInfo.outgoingVideoPublisher != null) {
             sharedInfo.outgoingVideoPublisher.setPublishVideo(sharedInfo.videoIsOn);
-            Log.d("OPENTOK","OpenTokSessionManager.updateVideoState to:" + (sharedInfo.audioIsOn?"TRUE":"FALSE"));
+            Log.d("OPENTOK","OpenTokSessionManager.updateVideoState to:" + (sharedInfo.videoIsOn?"TRUE":"FALSE"));
         } else {
-            if (sharedInfo.session == null) Log.d("OPENTOK","OpenTokSessionManager.updateAudioState session was null");
+            if (sharedInfo.session == null) Log.d("OPENTOK","OpenTokSessionManager.updateVideoState session was null");
             if (sharedInfo.outgoingVideoPublisher == null) Log.d("OPENTOK","OpenTokSessionManager.updateVideoState publisher was null");
         }
     }
 
     protected  void updateCameraState() {
+        //this might be weird
+
         OpenTokSharedInfo sharedInfo = OpenTokSharedInfo.getInstance();
         if (sharedInfo.session != null && sharedInfo.outgoingVideoPublisher != null) {
             sharedInfo.outgoingVideoPublisher.cycleCamera();
             Log.d("OPENTOK","OpenTokSessionManager.cycledCamera");
         } else {
-            if (sharedInfo.session == null) Log.d("OPENTOK","OpenTokSessionManager.updateAudioState session was null");
-            if (sharedInfo.outgoingVideoPublisher == null) Log.d("OPENTOK","OpenTokSessionManager.updateVideoState publisher was null");
+            if (sharedInfo.session == null) Log.d("OPENTOK","OpenTokSessionManager.updateCameraState session was null");
+            if (sharedInfo.outgoingVideoPublisher == null) Log.d("OPENTOK","OpenTokSessionManager.updateCameraState publisher was null");
         }
     }
 
